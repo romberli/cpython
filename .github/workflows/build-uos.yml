@@ -84,7 +84,8 @@ jobs:
           tar xzf bzip2-1.0.8.tar.gz
           cd bzip2-1.0.8
           make -j$(nproc) CFLAGS="-fPIC"
-          install -d /usr/local/static-libs/bzip2/{lib,include}
+          mkdir -p /usr/local/static-libs/bzip2/lib
+          mkdir -p /usr/local/static-libs/bzip2/include
           install libbz2.a /usr/local/static-libs/bzip2/lib/
           install bzlib.h /usr/local/static-libs/bzip2/include/
 
