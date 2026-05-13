@@ -182,6 +182,8 @@ jobs:
 
       - name: Configure Python for static build
         run: |
+          PROFILE_TASK="-m test --pgo --timeout=120 -x test.datetimetester"
+          export PROFILE_TASK
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
@@ -190,7 +192,8 @@ jobs:
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             CFLAGS="${STATIC_CFLAGS}" \
-            LDFLAGS="${STATIC_LDFLAGS}"
+            LDFLAGS="${STATIC_LDFLAGS}" \
+            PROFILE_TASK="$PROFILE_TASK"
 
       - name: Build Python
         run: |
