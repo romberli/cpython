@@ -45,22 +45,7 @@ jobs:
 
       - name: Apply patches for static build
         run: |
-          cat > /tmp/getpath_noop_fix.patch << 'EOF'
---- a/Modules/getpath_noop.c
-+++ b/Modules/getpath_noop.c
-@@ -8,3 +8,10 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
- {
-     return PyStatus_Error("path configuration is unsupported");
- }
-+
-+PyObject *
-+_Py_Get_Getpath_CodeObject(void)
-+{
-+    PyErr_SetString(PyExc_RuntimeError, "getpath code object is not available in noop mode");
-+    return NULL;
-+}
-EOF
-          patch -p1 < /tmp/getpath_noop_fix.patch
+          printf '\nPyObject *\n_Py_Get_Getpath_CodeObject(void)\n{\n    PyErr_SetString(PyExc_RuntimeError, "getpath code object is not available in noop mode");\n    return NULL;\n}\n' >> Modules/getpath_noop.c
 
       - name: Install build tools
         run: |
