@@ -46,6 +46,7 @@ jobs:
       - name: Apply patches for static build
         run: |
           printf '\nPyObject *\n_Py_Get_Getpath_CodeObject(void)\n{\n    PyErr_SetString(PyExc_RuntimeError, "getpath code object is not available in noop mode");\n    return NULL;\n}\n' >> Modules/getpath_noop.c
+          sed -i '/test_datetime/d' Lib/test/libregrtest/pgo.py
 
       - name: Install build tools
         run: |
@@ -182,8 +183,6 @@ jobs:
 
       - name: Configure Python for static build
         run: |
-          PROFILE_TASK="-m test --pgo --timeout=120 -x datetimetester"
-          export PROFILE_TASK
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
@@ -192,8 +191,7 @@ jobs:
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             CFLAGS="${STATIC_CFLAGS}" \
-            LDFLAGS="${STATIC_LDFLAGS}" \
-            PROFILE_TASK="$PROFILE_TASK"
+            LDFLAGS="${STATIC_LDFLAGS}"
 
       - name: Build Python
         run: |
