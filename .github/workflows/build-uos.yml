@@ -138,10 +138,6 @@ jobs:
           make -j$(nproc)
           mkdir -p /usr/local/static-libs/sqlite3/lib/pkgconfig
           make install
-          
-          printf 'prefix=/usr/local/static-libs/sqlite3\nexec_prefix=${prefix}\nlibdir=${exec_prefix}/lib\nincludedir=${prefix}/include\n\nName: SQLite\nDescription: SQL database engine\nVersion: 3.41.0\nLibs: -L${libdir} -lsqlite3\nCflags: -I${includedir}\n' > /usr/local/static-libs/sqlite3/lib/pkgconfig/sqlite3.pc
-          
-          echo "PKG_CONFIG_PATH=/usr/local/static-libs/sqlite3/lib/pkgconfig" >> $GITHUB_ENV
 
       - name: Build mpdecimal static
         run: |
