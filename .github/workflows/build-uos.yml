@@ -182,7 +182,7 @@ jobs:
 
       - name: Configure Python for static build
         run: |
-          PROFILE_TASK="-m test --pgo --timeout=120 -x test.datetimetester"
+          PROFILE_TASK="-m test --pgo --timeout=120 -x datetimetester"
           export PROFILE_TASK
           ./configure \
             --prefix=/opt/python-uos \
