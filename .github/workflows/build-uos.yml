@@ -183,7 +183,6 @@ jobs:
             --disable-shared \
             --with-static-libpython \
             --enable-optimizations \
-            --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             CFLAGS="${STATIC_CFLAGS}" \
             LDFLAGS="${STATIC_LDFLAGS}"
