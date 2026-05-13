@@ -43,11 +43,6 @@ jobs:
           ref: ${{ inputs.tag || 'v3.14.5' }}
           fetch-depth: 0
 
-      - name: Apply patches for static build
-        run: |
-          printf '\nPyObject *\n_Py_Get_Getpath_CodeObject(void)\n{\n    PyErr_SetString(PyExc_RuntimeError, "getpath code object is not available in noop mode");\n    return NULL;\n}\n' >> Modules/getpath_noop.c
-          sed -i '/test_datetime/d' Lib/test/libregrtest/pgo.py
-
       - name: Install build tools
         run: |
           apt-get install -y \
