@@ -1,0 +1,278 @@
+name: Build Python for UOS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Python version tag to build (e.g., v3.14.5)'
+        required: false
+        type: string
+        default: ''
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-python:
+    name: Build static Python for UOS
+    runs-on: ubuntu-latest
+    container:
+      image: debian:10
+    timeout-minutes: 120
+
+    steps:
+      - name: Install git for checkout
+        run: |
+          apt-get update
+          apt-get install -y git ca-certificates
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Checkout Python source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Install build tools
+        run: |
+          apt-get install -y \
+            build-essential \
+            gcc \
+            g++ \
+            make \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            wget \
+            curl \
+            unzip \
+            python3 \
+            python3-pip \
+            patchelf
+
+      - name: Create static library build directory
+        run: |
+          mkdir -p /usr/local/static-libs
+          echo "STATIC_LIB_DIR=/usr/local/static-libs" >> $GITHUB_ENV
+
+      - name: Build zlib static
+        run: |
+          cd /tmp
+          wget -q https://zlib.net/zlib-1.2.13.tar.gz
+          tar xzf zlib-1.2.13.tar.gz
+          cd zlib-1.2.13
+          ./configure --prefix=/usr/local/static-libs/zlib --static
+          make -j$(nproc)
+          make install
+
+      - name: Build bzip2 static
+        run: |
+          cd /tmp
+          wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+          tar xzf bzip2-1.0.8.tar.gz
+          cd bzip2-1.0.8
+          make -j$(nproc) CFLAGS="-fPIC"
+          install -d /usr/local/static-libs/bzip2/{lib,include}
+          install libbz2.a /usr/local/static-libs/bzip2/lib/
+          install bzlib.h /usr/local/static-libs/bzip2/include/
+
+      - name: Build xz (lzma) static
+        run: |
+          cd /tmp
+          wget -q https://tukaani.org/xz/xz-5.4.1.tar.gz
+          tar xzf xz-5.4.1.tar.gz
+          cd xz-5.4.1
+          ./configure --prefix=/usr/local/static-libs/xz \
+            --disable-shared --enable-static --with-pic
+          make -j$(nproc)
+          make install
+
+      - name: Build OpenSSL static
+        run: |
+          cd /tmp
+          wget -q https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+          tar xzf openssl-1.1.1w.tar.gz
+          cd openssl-1.1.1w
+          ./Configure no-shared no-dso no-engine \
+            linux-x86_64 \
+            -fPIC \
+            --prefix=/usr/local/static-libs/openssl \
+            --openssldir=/usr/local/static-libs/openssl
+          make -j$(nproc)
+          make install_sw
+
+      - name: Build libffi static
+        run: |
+          cd /tmp
+          wget -q https://github.com/libffi/libffi/releases/download/v3.4.4/libffi-3.4.4.tar.gz
+          tar xzf libffi-3.4.4.tar.gz
+          cd libffi-3.4.4
+          ./configure --prefix=/usr/local/static-libs/libffi \
+            --disable-shared --enable-static --with-pic
+          make -j$(nproc)
+          make install
+
+      - name: Build ncurses static
+        run: |
+          cd /tmp
+          wget -q https://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.4.tar.gz
+          tar xzf ncurses-6.4.tar.gz
+          cd ncurses-6.4
+          ./configure --prefix=/usr/local/static-libs/ncurses \
+            --without-shared --without-cxx-shared \
+            --with-pic --enable-widec
+          make -j$(nproc)
+          make install
+
+      - name: Build readline static
+        run: |
+          cd /tmp
+          wget -q https://ftp.gnu.org/pub/gnu/readline/readline-8.2.tar.gz
+          tar xzf readline-8.2.tar.gz
+          cd readline-8.2
+          ./configure --prefix=/usr/local/static-libs/readline \
+            --disable-shared --enable-static --with-pic \
+            --with-curses=/usr/local/static-libs/ncurses
+          make -j$(nproc) SHLIB_LIBS="-L/usr/local/static-libs/ncurses/lib -lncursesw"
+          make install
+
+      - name: Build sqlite3 static
+        run: |
+          cd /tmp
+          wget -q https://www.sqlite.org/2023/sqlite-autoconf-3410000.tar.gz
+          tar xzf sqlite-autoconf-3410000.tar.gz
+          cd sqlite-autoconf-3410000
+          ./configure --prefix=/usr/local/static-libs/sqlite3 \
+            --disable-shared --enable-static
+          make -j$(nproc)
+          make install
+
+      - name: Build mpdecimal static
+        run: |
+          cd /tmp
+          wget -q https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz
+          tar xzf mpdecimal-2.5.1.tar.gz
+          cd mpdecimal-2.5.1
+          ./configure --prefix=/usr/local/static-libs/mpdecimal \
+            --disable-shared --enable-static
+          make -j$(nproc)
+          make install
+
+      - name: List static libraries
+        run: |
+          find /usr/local/static-libs -name "*.a" -type f
+
+      - name: Setup Python build environment
+        run: |
+          export MODULE_BUILDTYPE=static
+          export PY_UNSUPPORTED_OPENSSL_BUILD=static
+          echo "MODULE_BUILDTYPE=static" >> $GITHUB_ENV
+          echo "PY_UNSUPPORTED_OPENSSL_BUILD=static" >> $GITHUB_ENV
+          
+          echo "STATIC_CFLAGS=-I/usr/local/static-libs/zlib/include \
+            -I/usr/local/static-libs/bzip2/include \
+            -I/usr/local/static-libs/xz/include \
+            -I/usr/local/static-libs/openssl/include \
+            -I/usr/local/static-libs/libffi/include \
+            -I/usr/local/static-libs/ncurses/include \
+            -I/usr/local/static-libs/readline/include \
+            -I/usr/local/static-libs/sqlite3/include \
+            -I/usr/local/static-libs/mpdecimal/include" >> $GITHUB_ENV
+          
+          echo "STATIC_LDFLAGS=-L/usr/local/static-libs/zlib/lib \
+            -L/usr/local/static-libs/bzip2/lib \
+            -L/usr/local/static-libs/xz/lib \
+            -L/usr/local/static-libs/openssl/lib \
+            -L/usr/local/static-libs/libffi/lib \
+            -L/usr/local/static-libs/ncurses/lib \
+            -L/usr/local/static-libs/readline/lib \
+            -L/usr/local/static-libs/sqlite3/lib \
+            -L/usr/local/static-libs/mpdecimal/lib" >> $GITHUB_ENV
+
+      - name: Configure Python for static build
+        run: |
+          ./configure \
+            --prefix=/opt/python-uos \
+            --disable-shared \
+            --with-static-libpython \
+            --enable-optimizations \
+            --with-lto \
+            --with-openssl=/usr/local/static-libs/openssl \
+            CFLAGS="${STATIC_CFLAGS}" \
+            LDFLAGS="${STATIC_LDFLAGS} -static"
+
+      - name: Build Python
+        run: |
+          make -j$(nproc)
+
+      - name: Install Python
+        run: |
+          make install
+
+      - name: Verify Python installation
+        run: |
+          /opt/python-uos/bin/python3 --version
+
+      - name: Verify static linking
+        run: |
+          echo "=== Checking Python binary dependencies ==="
+          ldd /opt/python-uos/bin/python3 || true
+          
+          echo "=== Expected: only glibc dependencies ==="
+          ldd /opt/python-uos/bin/python3 2>&1 | grep -E "(libpthread|libdl|libc\.so)" || echo "Found expected glibc deps"
+          
+          echo "=== Checking for unwanted dynamic libs ==="
+          if ldd /opt/python-uos/bin/python3 2>&1 | grep -qE "(libssl|libcrypto|libz|libbz2|liblzma|libffi|libncurses|libreadline|libsqlite3)"; then
+            echo "ERROR: Found unwanted dynamic library dependencies"
+            ldd /opt/python-uos/bin/python3
+            exit 1
+          fi
+          echo "SUCCESS: No unwanted dynamic library dependencies found"
+
+      - name: Verify Python modules
+        run: |
+          /opt/python-uos/bin/python3 -c "import ssl; print('SSL:', ssl.OPENSSL_VERSION)"
+          /opt/python-uos/bin/python3 -c "import zlib; print('zlib OK')"
+          /opt/python-uos/bin/python3 -c "import bz2; print('bz2 OK')"
+          /opt/python-uos/bin/python3 -c "import lzma; print('lzma OK')"
+          /opt/python-uos/bin/python3 -c "import sqlite3; print('sqlite3:', sqlite3.sqlite_version)"
+          /opt/python-uos/bin/python3 -c "import ctypes; print('ctypes OK')"
+          /opt/python-uos/bin/python3 -c "import curses; print('curses OK')"
+          /opt/python-uos/bin/python3 -c "import readline; print('readline OK')"
+          /opt/python-uos/bin/python3 -c "import decimal; print('decimal OK')"
+
+      - name: Get Python version for package naming
+        run: |
+          PYTHON_VERSION=$(/opt/python-uos/bin/python3 -c "import sys; print(sys.version.split()[0])")
+          echo "PYTHON_VERSION=${PYTHON_VERSION}" >> $GITHUB_ENV
+
+      - name: Create Python tarball
+        run: |
+          cd /opt
+          tar -czf python-${{ env.PYTHON_VERSION }}-uos-x86_64.tar.gz python-uos
+          mv python-${{ env.PYTHON_VERSION }}-uos-x86_64.tar.gz $GITHUB_WORKSPACE/
+
+      - name: Download virtualenv wheel
+        run: |
+          mkdir -p /tmp/wheels
+          pip3 download virtualenv -d /tmp/wheels --no-deps
+          cp /tmp/wheels/virtualenv-*.whl $GITHUB_WORKSPACE/
+
+      - name: Upload Python artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-uos-${{ env.PYTHON_VERSION }}
+          path: python-${{ env.PYTHON_VERSION }}-uos-x86_64.tar.gz
+          retention-days: 30
+
+      - name: Upload virtualenv artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: virtualenv-wheel
+          path: virtualenv-*.whl
+          retention-days: 30
