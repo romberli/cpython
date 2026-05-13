@@ -43,6 +43,10 @@ jobs:
           ref: ${{ inputs.tag || 'v3.14.5' }}
           fetch-depth: 0
 
+      - name: Apply patches for static build
+        run: |
+          patch -p1 < patches/getpath_noop_fix.patch
+
       - name: Install build tools
         run: |
           apt-get install -y \
@@ -178,7 +182,7 @@ jobs:
 
       - name: Configure Python for static build
         run: |
-          ./configure \
+./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
             --with-static-libpython \
