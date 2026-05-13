@@ -136,7 +136,23 @@ jobs:
           ./configure --prefix=/usr/local/static-libs/sqlite3 \
             --disable-shared --enable-static
           make -j$(nproc)
+          mkdir -p /usr/local/static-libs/sqlite3/lib/pkgconfig
           make install
+          
+          cat > /usr/local/static-libs/sqlite3/lib/pkgconfig/sqlite3.pc << 'EOF'
+prefix=/usr/local/static-libs/sqlite3
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: SQLite
+Description: SQL database engine
+Version: 3.41.0
+Libs: -L${libdir} -lsqlite3
+Cflags: -I${includedir}
+EOF
+          
+          echo "PKG_CONFIG_PATH=/usr/local/static-libs/sqlite3/lib/pkgconfig" >> $GITHUB_ENV
 
       - name: Build mpdecimal static
         run: |
