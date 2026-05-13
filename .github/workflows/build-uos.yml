@@ -186,7 +186,7 @@ jobs:
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             CFLAGS="${STATIC_CFLAGS}" \
-            LDFLAGS="${STATIC_LDFLAGS} -static"
+            LDFLAGS="${STATIC_LDFLAGS}"
 
       - name: Build Python
         run: |
