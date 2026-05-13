@@ -125,29 +125,7 @@ jobs:
           make -j$(nproc)
           make install
 
-      - name: Build ncurses static
-        run: |
-          cd /tmp
-          wget -q https://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.4.tar.gz
-          tar xzf ncurses-6.4.tar.gz
-          cd ncurses-6.4
-          ./configure --prefix=/usr/local/static-libs/ncurses \
-            --without-shared --without-cxx-shared \
-            --with-pic --enable-widec
-          make -j$(nproc)
-          make install
-
-      - name: Build readline static
-        run: |
-          cd /tmp
-          wget -q https://ftp.gnu.org/pub/gnu/readline/readline-8.2.tar.gz
-          tar xzf readline-8.2.tar.gz
-          cd readline-8.2
-          ./configure --prefix=/usr/local/static-libs/readline \
-            --disable-shared --enable-static --with-pic \
-            --with-curses=/usr/local/static-libs/ncurses
-          make -j$(nproc) SHLIB_LIBS="-L/usr/local/static-libs/ncurses/lib -lncursesw"
-          make install
+      
 
       - name: Build sqlite3 static
         run: |
@@ -187,8 +165,6 @@ jobs:
             -I/usr/local/static-libs/xz/include \
             -I/usr/local/static-libs/openssl/include \
             -I/usr/local/static-libs/libffi/include \
-            -I/usr/local/static-libs/ncurses/include \
-            -I/usr/local/static-libs/readline/include \
             -I/usr/local/static-libs/sqlite3/include \
             -I/usr/local/static-libs/mpdecimal/include" >> $GITHUB_ENV
           
@@ -197,15 +173,11 @@ jobs:
             -L/usr/local/static-libs/xz/lib \
             -L/usr/local/static-libs/openssl/lib \
             -L/usr/local/static-libs/libffi/lib \
-            -L/usr/local/static-libs/ncurses/lib \
-            -L/usr/local/static-libs/readline/lib \
             -L/usr/local/static-libs/sqlite3/lib \
             -L/usr/local/static-libs/mpdecimal/lib" >> $GITHUB_ENV
 
       - name: Configure Python for static build
         run: |
-          export ac_cv_lib_curses_setupterm=no
-          export ac_cv_lib_ncurses_setupterm=no
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
@@ -252,8 +224,7 @@ jobs:
           /opt/python-uos/bin/python3 -c "import lzma; print('lzma OK')"
           /opt/python-uos/bin/python3 -c "import sqlite3; print('sqlite3:', sqlite3.sqlite_version)"
           /opt/python-uos/bin/python3 -c "import ctypes; print('ctypes OK')"
-          /opt/python-uos/bin/python3 -c "import curses; print('curses OK')"
-          /opt/python-uos/bin/python3 -c "import readline; print('readline OK')"
+          
           /opt/python-uos/bin/python3 -c "import decimal; print('decimal OK')"
 
       - name: Get Python version for package naming
