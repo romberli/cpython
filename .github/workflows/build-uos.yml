@@ -187,6 +187,7 @@ jobs:
             --enable-optimizations \
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
+            --with-build-python=/usr/bin/python3 \
             CFLAGS="${STATIC_CFLAGS}" \
             LDFLAGS="${STATIC_LDFLAGS}"
 
