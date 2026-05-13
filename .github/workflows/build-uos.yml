@@ -183,6 +183,7 @@ jobs:
 
       - name: Configure Python for static build
         run: |
+          export PKG_CONFIG=/bin/false
           export LIBSQLITE3_CFLAGS="-I/usr/local/static-libs/sqlite3/include"
           export LIBSQLITE3_LIBS="-L/usr/local/static-libs/sqlite3/lib -lsqlite3"
           ./configure \
