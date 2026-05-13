@@ -183,6 +183,8 @@ jobs:
 
       - name: Configure Python for static build
         run: |
+          export LIBSQLITE3_CFLAGS="-I/usr/local/static-libs/sqlite3/include"
+          export LIBSQLITE3_LIBS="-L/usr/local/static-libs/sqlite3/lib -lsqlite3"
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
