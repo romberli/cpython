@@ -24,6 +24,13 @@ jobs:
     timeout-minutes: 120
 
     steps:
+      - name: Setup apt sources for Debian 10 (buster archive)
+        run: |
+          cat > /etc/apt/sources.list << 'EOF'
+          deb http://archive.debian.org/debian buster main contrib non-free
+          deb http://archive.debian.org/debian-security buster/updates main contrib non-free
+          EOF
+
       - name: Install git for checkout
         run: |
           apt-get update
