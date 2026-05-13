@@ -204,6 +204,8 @@ jobs:
 
       - name: Configure Python for static build
         run: |
+          export ac_cv_lib_curses_setupterm=no
+          export ac_cv_lib_ncurses_setupterm=no
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
