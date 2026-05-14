@@ -179,8 +179,6 @@ jobs:
 
       - name: Configure Python for static build
         run: |
-          LIBSQLITE3_CFLAGS="-I/usr/local/static-libs/sqlite3/include" \
-          LIBSQLITE3_LIBS="-L/usr/local/static-libs/sqlite3/lib -lsqlite3" \
           PKG_CONFIG=/bin/false \
           ./configure \
             --prefix=/opt/python-uos \
@@ -190,8 +188,9 @@ jobs:
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             --disable-test-modules \
-            CFLAGS="${STATIC_CFLAGS}" \
-            LDFLAGS="${STATIC_LDFLAGS}"
+            CFLAGS="${STATIC_CFLAGS} -I/usr/local/static-libs/sqlite3/include" \
+            LDFLAGS="${STATIC_LDFLAGS}" \
+            LIBS="-lsqlite3"
 
       - name: Build Python
         run: |
