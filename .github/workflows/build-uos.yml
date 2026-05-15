@@ -139,18 +139,7 @@ jobs:
           mkdir -p /usr/local/static-libs/sqlite3/lib/pkgconfig
           make install
           
-          cat > /usr/local/static-libs/sqlite3/lib/pkgconfig/sqlite3.pc << 'SQEOF'
-prefix=/usr/local/static-libs/sqlite3
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: SQLite
-Description: SQL database engine
-Version: 3.41.0
-Libs: -L\${libdir} -lsqlite3 -lm -ldl -lpthread
-Cflags: -I\${includedir}
-SQEOF
+          printf 'prefix=/usr/local/static-libs/sqlite3\nexec_prefix=${prefix}\nlibdir=${exec_prefix}/lib\nincludedir=${prefix}/include\n\nName: SQLite\nDescription: SQL database engine\nVersion: 3.41.0\nLibs: -L${libdir} -lsqlite3 -lm -ldl -lpthread\nCflags: -I${includedir}\n' > /usr/local/static-libs/sqlite3/lib/pkgconfig/sqlite3.pc
           
           echo "PKG_CONFIG_PATH=/usr/local/static-libs/sqlite3/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
 
