@@ -136,8 +136,9 @@ jobs:
           ./configure --prefix=/usr/local/static-libs/sqlite3 \
             --disable-shared --enable-static
           make -j$(nproc)
-          mkdir -p /usr/local/static-libs/sqlite3/lib/pkgconfig
           make install
+          
+          echo "PKG_CONFIG_PATH=/usr/local/static-libs/sqlite3/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
 
       - name: Build mpdecimal static
         run: |
@@ -179,7 +180,6 @@ jobs:
 
       - name: Configure Python for static build
         run: |
-          PKG_CONFIG=/bin/false \
           ./configure \
             --prefix=/opt/python-uos \
             --disable-shared \
@@ -188,9 +188,8 @@ jobs:
             --with-lto \
             --with-openssl=/usr/local/static-libs/openssl \
             --disable-test-modules \
-            CFLAGS="${STATIC_CFLAGS} -I/usr/local/static-libs/sqlite3/include" \
-            LDFLAGS="${STATIC_LDFLAGS}" \
-            LIBS="-lsqlite3"
+            CFLAGS="${STATIC_CFLAGS}" \
+            LDFLAGS="${STATIC_LDFLAGS}"
 
       - name: Build Python
         run: |
